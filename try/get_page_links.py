@@ -1,21 +1,49 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from time import sleep
 
-url = "http://www.keju17.com/"
+url = "http://127.0.0.1/"
 
-driver = webdriver.Chrome()
+# for a f2e , maybe i'd better using Javascript function instead of selenium's methods
+# let's write that javascript function
+js = '''
+getElementInfo = {
+    getElementsAttributes(tag_name, attr) {
+        return Array.prototype.map.call(document.getElementsByTagName(tag_name), v => v[attr])
+    },
+      getLocationHref() {
+        return window.location.href
+    }
+}
+
+get_a_href = Object.assign({
+    getLink() {
+        return this.getElementsAttributes("a", "href")
+    }
+}, getElementInfo)
+
+get_iframe_src = Object.assign({
+    getLink() {
+        return this.getElementsAttributes("iframe", "src");
+    }
+}, getElementInfo)
+
+return {
+    a_links:get_a_href.getLink(),
+    iframe_links: get_iframe_src.getLink(),
+    frame_links: getElementInfo.getElementsAttributes("frame","src"),
+    location_href: getElementInfo.getLocationHref()
+}
+'''
+
+chrome_options = Options()
+chrome_options.add_argument('--headless')
+
+driver = webdriver.Chrome(chrome_options=chrome_options)
 driver.get(url)
 
-if driver.current_url != url:
-    print("url 发生了变化，可能发生了重定向，当前url为" + driver.current_url)
+print(driver.execute_script(js))
 
-for a in driver.find_elements_by_tag_name("a"):
-    if a.get_attribute("href"):
-        print("发现a标签，链接为：" + a.get_attribute("href"))
-    else:
-        print("发现a标签，没有定位到链接")
+sleep(2)
 
-for iframe in driver.find_elements_by_tag_name("iframe"):
-    if a.get_attribute("src"):
-        print("发现ifram标签，链接为：" + a.get_attribute("src"))
-    else:
-        print("发现iframe标签，没有定位到链接")
+driver.quit()
